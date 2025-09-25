@@ -2,9 +2,10 @@
   "name": "clearauto-assets",
   "private": true,
   "scripts": {
-    "build": "npm run build:hiw && npm run build:vin",
+    "build": "npm run build:hiw && npm run build:vin && build:report",
     "build:hiw": "npx terser src/how-it-works.js -c -m -o public/how-it-works.min.js",
-    "build:vin": "npx terser src/vin-cards.js -c -m -o public/vin-cards.min.js"
+    "build:vin": "npx terser src/vin-cards.js -c -m -o public/vin-cards.min.js",
+    "build:report": "npx terser src/reports-mobile-tab.js -c -m -o public/reports-mobile-tab.min.js"
   },
   "devDependencies": {
     "terser": "^5.34.1"
