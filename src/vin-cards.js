@@ -4,6 +4,30 @@
 })(window, function (win) {
   "use strict";
 
+  // --- tiny utils ---
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else fn();
+  }
+  function waitForGSAP(next) {
+    if (win.gsap && win.ScrollTrigger) {
+      win.gsap.registerPlugin(win.ScrollTrigger);
+      return next();
+    }
+    const t = setInterval(() => {
+      if (win.gsap && win.ScrollTrigger) {
+        clearInterval(t);
+        win.gsap.registerPlugin(win.ScrollTrigger);
+        next();
+      }
+    }, 30);
+    setTimeout(() => {
+      clearInterval(t);
+      console.warn("[vin] GSAP not found after 10s");
+    }, 10000);
+  }
+
   // ==== Guards: GSAP + ScrollTrigger required ====
   if (!win.gsap || !win.ScrollTrigger) {
     console.warn("[vin-cards] GSAP + ScrollTrigger required before this file.");
@@ -577,10 +601,17 @@
   //  EXPORTS
   // =========
   function init() {
-    vinCards();
-    sectionIntroReveal_NoWrapper();
-    ctaStaggerAll();
+    onReady(() => {
+      waitForGSAP(() => {
+        vinCards();
+        sectionIntroReveal_NoWrapper();
+        ctaStaggerAll();
+      });
+    });
   }
+
+  // optional aliases (safe to keep)
+  win.clearautoVinCardsInit = init;
 
   return init;
 });
