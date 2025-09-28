@@ -27,16 +27,6 @@
       console.warn("[vin] GSAP not found after 10s");
     }, 10000);
   }
-
-  // ==== Guards: GSAP + ScrollTrigger required ====
-  if (!win.gsap || !win.ScrollTrigger) {
-    console.warn("[vin-cards] GSAP + ScrollTrigger required before this file.");
-    return function noop() {};
-  }
-  const gsap = win.gsap;
-  const ScrollTrigger = win.ScrollTrigger;
-  gsap.registerPlugin(ScrollTrigger);
-
   // ==== Shared registry for CTA defers ====
   const CTA_REG = { deferred: [] };
 
