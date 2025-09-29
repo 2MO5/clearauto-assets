@@ -4,29 +4,15 @@
 })(window, function (win) {
   "use strict";
 
-  // --- tiny utils ---
-  function onReady(fn) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", fn, { once: true });
-    } else fn();
+  // ==== Guards: GSAP + ScrollTrigger required ====
+  if (!win.gsap || !win.ScrollTrigger) {
+    console.warn("[vin-cards] GSAP + ScrollTrigger required before this file.");
+    return function noop() {};
   }
-  function waitForGSAP(next) {
-    if (win.gsap && win.ScrollTrigger) {
-      win.gsap.registerPlugin(win.ScrollTrigger);
-      return next();
-    }
-    const t = setInterval(() => {
-      if (win.gsap && win.ScrollTrigger) {
-        clearInterval(t);
-        win.gsap.registerPlugin(win.ScrollTrigger);
-        next();
-      }
-    }, 30);
-    setTimeout(() => {
-      clearInterval(t);
-      console.warn("[vin] GSAP not found after 10s");
-    }, 10000);
-  }
+  const gsap = win.gsap;
+  const ScrollTrigger = win.ScrollTrigger;
+  gsap.registerPlugin(ScrollTrigger);
+
   // ==== Shared registry for CTA defers ====
   const CTA_REG = { deferred: [] };
 
@@ -34,6 +20,7 @@
   //  VIN CARDS (main section)
   // =========================
   function vinCards() {
+    console.log("💥 vinCards() running...");
     // ---- selectors ----
     const SECTION = ".scroll-stack-section";
     const STAGE = ".card-stack-container";
@@ -44,14 +31,22 @@
     const stage = document.querySelector(STAGE);
     const cards = gsap.utils.toArray(CARD);
 
+    console.log("🧪 section:", section);
+    console.log("🧪 stage:", stage);
+    console.log("🧪 cards:", cards);
+
     // ---- guards ----
     if (
       !section ||
       !stage ||
       cards.length === 0 ||
       stage.dataset.vinInit === "1"
-    )
+    ) {
+      console.warn("⛔ vinCards() aborted — failed guards");
       return;
+    }
+
+    console.log("✅ Passed guards. Proceeding...");
     stage.dataset.vinInit = "1";
 
     // ---- env helpers ----
@@ -591,17 +586,10 @@
   //  EXPORTS
   // =========
   function init() {
-    onReady(() => {
-      waitForGSAP(() => {
-        vinCards();
-        sectionIntroReveal_NoWrapper();
-        ctaStaggerAll();
-      });
-    });
+    vinCards();
+    sectionIntroReveal_NoWrapper();
+    ctaStaggerAll();
   }
-
-  // optional aliases (safe to keep)
-  win.clearautoVinCardsInit = init;
 
   return init;
 });
