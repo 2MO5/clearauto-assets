@@ -4,15 +4,29 @@
 })(window, function (win) {
   "use strict";
 
-  // ==== Guards: GSAP + ScrollTrigger required ====
-  if (!win.gsap || !win.ScrollTrigger) {
-    console.warn("[vin-cards] GSAP + ScrollTrigger required before this file.");
-    return function noop() {};
+  // --- tiny utils ---
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else fn();
   }
-  const gsap = win.gsap;
-  const ScrollTrigger = win.ScrollTrigger;
-  gsap.registerPlugin(ScrollTrigger);
-
+  function waitForGSAP(next) {
+    if (win.gsap && win.ScrollTrigger) {
+      win.gsap.registerPlugin(win.ScrollTrigger);
+      return next();
+    }
+    const t = setInterval(() => {
+      if (win.gsap && win.ScrollTrigger) {
+        clearInterval(t);
+        win.gsap.registerPlugin(win.ScrollTrigger);
+        next();
+      }
+    }, 30);
+    setTimeout(() => {
+      clearInterval(t);
+      console.warn("[vin] GSAP not found after 10s");
+    }, 10000);
+  }
   // ==== Shared registry for CTA defers ====
   const CTA_REG = { deferred: [] };
 
@@ -20,7 +34,6 @@
   //  VIN CARDS (main section)
   // =========================
   function vinCards() {
-    console.log("💥 vinCards() running...");
     // ---- selectors ----
     const SECTION = ".scroll-stack-section";
     const STAGE = ".card-stack-container";
@@ -29,11 +42,27 @@
 
     const section = document.querySelector(SECTION);
     const stage = document.querySelector(STAGE);
-    const cards = gsap.utils.toArray(CARD);
+    const cards = gsap.utils.toArray(`${SECTION} ${CARD}`);
 
-    console.log("🧪 section:", section);
-    console.log("🧪 stage:", stage);
-    console.log("🧪 cards:", cards);
+    //---retry--
+    if (
+      !section ||
+      !stage ||
+      cards.length === 0 ||
+      stage.dataset.vinInit === "1"
+    ) {
+      // retry once shortly later in case CMS/IX2 just finished
+      if (!stage || stage.dataset.vinRetry === "1") return;
+      if (stage) stage.dataset.vinRetry = "1";
+      setTimeout(() => {
+        try {
+          vinCards();
+        } catch (e) {
+          console.warn("[vin] retry failed", e);
+        }
+      }, 120);
+      return;
+    }
 
     // ---- guards ----
     if (
@@ -41,12 +70,8 @@
       !stage ||
       cards.length === 0 ||
       stage.dataset.vinInit === "1"
-    ) {
-      console.warn("⛔ vinCards() aborted — failed guards");
+    )
       return;
-    }
-
-    console.log("✅ Passed guards. Proceeding...");
     stage.dataset.vinInit = "1";
 
     // ---- env helpers ----
@@ -586,10 +611,17 @@
   //  EXPORTS
   // =========
   function init() {
-    vinCards();
-    sectionIntroReveal_NoWrapper();
-    ctaStaggerAll();
+    onReady(() => {
+      waitForGSAP(() => {
+        vinCards();
+        sectionIntroReveal_NoWrapper();
+        ctaStaggerAll();
+      });
+    });
   }
+
+  // optional aliases (safe to keep)
+  win.clearautoVinCardsInit = init;
 
   return init;
 });
